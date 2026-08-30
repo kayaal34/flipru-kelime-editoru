@@ -671,6 +671,36 @@
   const VOWELS = 'аеиоуыэюя'; // ё haric: ё zaten vurguyu tasir, ayri isaret gerekmez
   const CORE_FIELDS = ['id', 'ru', 'tr'];
 
+  // Uygulamadaki sozcuk turu modeli yalnizca bu dordunu taniyor
+  // (lib/data/models/word.dart, PartOfSpeech.byKey); baska bir deger
+  // yazilirsa sessizce 'other'a dusuyor.
+  const POS_VALUES = ['noun', 'verb', 'adj', 'other'];
+
+  // Uygulamadaki tema adlarinin Turkce karsiligi (lib/core/i18n/strings.dart,
+  // themeLabels) -- ham "food", "animals" gibi anahtarlar yerine burada da
+  // aynen bunlar gosteriliyor.
+  const THEME_LABELS = {
+    politics: 'Siyaset', economy: 'Ekonomi', health: 'Sağlık', science: 'Bilim',
+    environment: 'Çevre', education: 'Eğitim', technology: 'Teknoloji',
+    work: 'İş & Kariyer', law: 'Hukuk', transport: 'Ulaşım', food: 'Yeme & İçme',
+    family: 'Aile', emotion: 'Duygular', body: 'Vücut', home: 'Ev & Yaşam',
+    time: 'Zaman', culture: 'Sanat & Kültür', sport: 'Spor', military: 'Askeriye',
+    religion: 'Din & İnanç', geography: 'Coğrafya', agriculture: 'Tarım',
+    construction: 'İnşaat', clothing: 'Giyim', shopping: 'Alışveriş', media: 'Medya',
+    animals: 'Hayvanlar', travel: 'Seyahat', personality: 'Kişilik',
+    quantity: 'Ölçü & Miktar',
+  };
+  // Uygulama bir temayi yalnizca bu kadar kelimesi varsa gezilebilir bir
+  // deste olarak gosteriyor (lib/data/repositories/word_repository.dart,
+  // themeDecks). Azi varsa kelimeler veri setinde duruyor ama kullanici
+  // tema listesinde o basligi hic gormuyor.
+  const THEME_DECK_MIN = 12;
+
+  function themeLabel(key) {
+    if (!key) return '';
+    return THEME_LABELS[key] || key;
+  }
+
   // ---------------------------------------------------------------- yardimcilar
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -846,12 +876,27 @@
 
   // ---------------------------------------------------------------- listeleme
   function buildThemeOptions() {
-    const themes = new Set();
-    for (const id of state.order) themes.add(state.working.get(id).theme || '');
-    const sorted = [...themes].filter(Boolean).sort();
+    // Ham anahtar -> bu temadaki kelime sayisi (uygulamanin esigiyle
+    // kiyaslamak icin).
+    const counts = new Map();
+    for (const id of state.order) {
+      const t = state.working.get(id).theme || '';
+      if (!t) continue;
+      counts.set(t, (counts.get(t) || 0) + 1);
+    }
+    // Once uygulamanin kendi tema sirasiyla (THEME_LABELS'daki sira), sonra
+    // veri setinde olup da bilinen listede olmayan (beklenmeyen) anahtarlar.
+    const known = Object.keys(THEME_LABELS).filter((k) => counts.has(k));
+    const unknown = [...counts.keys()].filter((k) => !THEME_LABELS[k]).sort();
     const sel = $('#themeSelect');
+    const optionFor = (key) => {
+      const n = counts.get(key);
+      const altEsik = n < THEME_DECK_MIN;
+      return `<option value="${esc(key)}">${esc(themeLabel(key))} (${n}${altEsik ? ' · deste eşiği altında' : ''})</option>`;
+    };
     sel.innerHTML = '<option value="">Tema: hepsi</option><option value="__none__">(tema yok)</option>'
-      + sorted.map((t) => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+      + known.map(optionFor).join('')
+      + unknown.map(optionFor).join('');
   }
 
   function buildLevelChips() {
@@ -958,7 +1003,7 @@
             <div class="badges">${badges}</div>
           </td>
           <td>${lvl ? `<span class="lvl-badge" style="--lvl-color:var(--lvl-${lvl})">${lvl}</span>` : ''}</td>
-          <td><span class="theme-text ${w.theme ? '' : 'empty'}">${esc(w.theme || 'yok')}</span></td>
+          <td><span class="theme-text ${w.theme ? '' : 'empty'}">${esc(w.theme ? themeLabel(w.theme) : 'yok')}</span></td>
           <td>
             <div class="row-actions">
               <button class="icon-btn" data-edit="${esc(id)}" title="Düzenle">
@@ -986,7 +1031,9 @@
   }
 
   function renderChangesButton() {
-    const n = state.editedThisSession.size + state.deleted.size;
+    // Bilerek birlesim (union) sayiyoruz: bir kelime hem duzenlenip hem
+    // silinmis olsa bile tek degisiklik olarak gorunsun.
+    const n = new Set([...state.editedThisSession, ...state.deleted]).size;
     $('#btnChanges').style.display = n ? 'flex' : 'none';
     $('#changesLabel').textContent = `${n} değişiklik`;
   }
@@ -1008,9 +1055,9 @@
     { key: 'accented', label: 'Vurgulu hâli' },
     { key: 'translit', label: 'Okunuş (translit)' },
     { key: 'tr', label: 'Türkçe karşılık' },
-    { key: 'pos', label: 'Sözcük türü', select: ['noun', 'verb', 'adjective', 'adverb', 'preposition', 'interjection', 'numeral', 'other'] },
+    { key: 'pos', label: 'Sözcük türü', select: POS_VALUES },
     { key: 'level', label: 'Seviye', select: LEVELS },
-    { key: 'theme', label: 'Tema' },
+    { key: 'theme', label: 'Tema', themeSelect: true },
     { key: 'exRu', label: 'Örnek cümle (Rusça)', textarea: true },
     { key: 'exTr', label: 'Örnek cümle (Türkçe)', textarea: true },
   ];
@@ -1043,15 +1090,24 @@
       const val = fieldVal(w, f.key);
       const changed = original && (original[f.key] || '') !== val;
       let input;
-      if (f.select) {
+      if (f.themeSelect) {
+        const opts = Object.keys(THEME_LABELS).sort((a, b) => THEME_LABELS[a].localeCompare(THEME_LABELS[b], 'tr'));
+        input = `<select data-f="${f.key}">
+          <option value="" ${!val ? 'selected' : ''}>(tema yok)</option>
+          ${opts.map((k) => `<option value="${k}" ${k === val ? 'selected' : ''}>${THEME_LABELS[k]}</option>`).join('')}
+        </select>`;
+      } else if (f.select) {
         input = `<select data-f="${f.key}">${f.select.map((v) => `<option value="${v}" ${v === val ? 'selected' : ''}>${v}</option>`).join('')}</select>`;
       } else if (f.textarea) {
         input = `<textarea data-f="${f.key}">${esc(val)}</textarea>`;
       } else {
         input = `<input data-f="${f.key}" type="text" value="${esc(val)}" />`;
       }
+      const oldDisplay = f.themeSelect
+        ? (original && original[f.key] ? themeLabel(original[f.key]) : '(boş)')
+        : (original ? (original[f.key] || '(boş)') : '(boş)');
       const oldHint = changed
-        ? `<div class="old-value"><span class="tag">önce</span><s>${esc(original[f.key] || '(boş)')}</s></div>`
+        ? `<div class="old-value"><span class="tag">önce</span><s>${esc(oldDisplay)}</s></div>`
         : '';
       return `<div class="field"><label>${f.label}</label>${input}${oldHint}</div>`;
     }).join('');
@@ -1128,7 +1184,9 @@
       state.editedThisSession.delete(id);
     } else {
       state.deleted.add(id);
-      state.editedThisSession.add(id);
+      // Not: editedThisSession'a EKLENMIYOR -- zaten `deleted` kumesinde,
+      // ikisine birden eklersek degisiklik sayaci ayni kelimeyi iki kez
+      // sayardi.
     }
     state.dirty = true;
     renderAll();
@@ -1273,20 +1331,36 @@
       return;
     }
 
-    try {
-      if (state.handle) {
-        // Once, uzerine yazilacak onceki icerigin bir yedegini indiriyoruz --
-        // "kaydet" tek yonlu bir islem olmasin.
-        downloadBackup(state.lastSavedText);
+    let wroteDirectly = false;
+    if (state.handle) {
+      try {
+        // Yazma izni "dosya ac" sirasinda otomatik verilmeyebiliyor; once
+        // izni kontrol edip gerekirse istemezsek createWritable() kullanici
+        // etkilesimi zaten harcanmis oldugu icin sessizce reddedilebiliyordu
+        // -- bu, "kaydet dedim, hata verdi" sikayetinin sebebiydi.
+        if (state.handle.queryPermission && state.handle.requestPermission) {
+          let perm = await state.handle.queryPermission({ mode: 'readwrite' });
+          if (perm !== 'granted') perm = await state.handle.requestPermission({ mode: 'readwrite' });
+          if (perm !== 'granted') {
+            alert('Dosyaya yazma izni verilmedi. "Dosya aç" ile dosyayı yeniden seçip tekrar deneyin.');
+            return;
+          }
+        }
         const writable = await state.handle.createWritable();
         await writable.write(text);
         await writable.close();
-      } else {
+        wroteDirectly = true;
+        // Yazma basarili OLDUKTAN sonra, uzerine yazilan onceki icerigin
+        // yedegini indiriyoruz.
+        downloadBackup(state.lastSavedText);
+      } catch (err) {
+        // Dogrudan yazma basarisiz oldu -- kullaniciyi elinde hicbir sey
+        // olmadan birakmamak icin indirmeye dusuyoruz, sessizce durmuyoruz.
+        alert('Dosyaya doğrudan yazılamadı (' + (err && err.message ? err.message : err) + ').\n\nBunun yerine words.json indirilecek; onu elle projenizdeki dosyayla değiştirin.');
         downloadBlob(text, 'words.json');
       }
-    } catch (err) {
-      alert('Diske yazarken bir hata oluştu, dosyanız değişmemiş olabilir:\n' + err.message);
-      return;
+    } else {
+      downloadBlob(text, 'words.json');
     }
 
     state.lastSavedText = text;
@@ -1297,7 +1371,7 @@
     state.deleted.clear();
     state.added.clear();
     renderAll();
-    toast(state.handle ? 'Dosyaya kaydedildi. Bir de yedek indirildi.' : 'words.json indirildi.');
+    toast(wroteDirectly ? 'Dosyaya kaydedildi. Bir de yedek indirildi.' : 'words.json indirildi — projenizdeki dosyayla değiştirmeyi unutmayın.');
   }
 
   function downloadBlob(text, filename) {
