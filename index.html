@@ -747,6 +747,65 @@
 
   function fieldVal(word, f) { return word && word[f] != null ? word[f] : ''; }
 
+  // ---------------------------------------------------------------- taslak (otomatik kurtarma)
+  //
+  // "Diske kaydet" dedigi ana kadar butun degisiklikler yalnizca bellekte
+  // duruyordu -- sayfayi yanlislikla yenileyen (ya da tarayici cokerse)
+  // her seyi kaybediyordu. Artik her degisiklikte kucuk bir "taslak"
+  // (yalnizca degisen kayitlar, butun veri seti degil) tarayicida
+  // saklaniyor; dosya tekrar acildiginda geri sorulup uygulanabiliyor.
+  const DRAFT_KEY = 'flipru_editor_draft';
+
+  function saveDraft() {
+    if (!state.fields.length) return;
+    const words = {};
+    for (const id of state.editedThisSession) words[id] = state.working.get(id);
+    for (const id of state.added) words[id] = state.working.get(id);
+    const draft = {
+      fileName: $('#fileNameLabel').textContent,
+      savedAt: new Date().toLocaleString('tr-TR'),
+      editedIds: [...state.editedThisSession].filter((id) => !state.added.has(id)),
+      addedIds: [...state.added],
+      deletedIds: [...state.deleted],
+      words,
+    };
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); }
+    catch { /* depolama kapali olabilir -- otomatik kurtarma sessizce devre disi kalir */ }
+  }
+
+  function loadDraft() {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  }
+
+  function clearDraft() {
+    try { localStorage.removeItem(DRAFT_KEY); } catch { /* onemsiz */ }
+  }
+
+  /// Taze acilmis dosyanin uzerine, kaydedilmemis taslagi tekrar uyguluyor.
+  function applyDraft(draft) {
+    for (const id of draft.deletedIds) {
+      if (state.working.has(id)) state.deleted.add(id);
+    }
+    for (const id of draft.editedIds) {
+      if (state.working.has(id) && draft.words[id]) {
+        Object.assign(state.working.get(id), draft.words[id]);
+        state.editedThisSession.add(id);
+      }
+    }
+    for (const id of draft.addedIds) {
+      if (draft.words[id] && !state.working.has(id)) {
+        state.order.push(id);
+        state.working.set(id, { ...draft.words[id] });
+        state.added.add(id);
+        state.editedThisSession.add(id);
+      }
+    }
+    state.dirty = true;
+  }
+
   // ---------------------------------------------------------------- dosya acma
   const supportsFsAccess = 'showOpenFilePicker' in window;
 
@@ -840,10 +899,29 @@
     $('#pagebar').style.display = 'flex';
     $('#statsStrip').style.display = 'flex';
 
+    // Bu dosya icin yarim kalmis bir taslak var mi -- varsa sor, isterse
+    // uygula. Dosya adi tam bir garanti degil ama basit ve yeterli bir
+    // kontrol: yanlis dosyaya yanlislikla uygulanmasin.
+    let draftMsg = '';
+    const draft = loadDraft();
+    if (draft && draft.fileName === name) {
+      const n = draft.editedIds.length + draft.addedIds.length + draft.deletedIds.length;
+      if (confirm(`Bu dosya için ${draft.savedAt} tarihinde kaydedilmemiş bir taslak bulundu (${n} değişiklik). Geri yüklensin mi?`)) {
+        applyDraft(draft);
+        draftMsg = ' Kaydedilmemiş taslak geri yüklendi, kontrol edip "Diske kaydet" deyin.';
+      } else {
+        clearDraft();
+      }
+    } else if (draft) {
+      // Baska bir dosyaya ait eski bir taslak: sessizce elde tutmuyoruz,
+      // kafa karistirmasin.
+      clearDraft();
+    }
+
     buildThemeOptions();
     ui.page = 1;
     renderAll();
-    toast(`${state.order.length} kelime yüklendi.`);
+    toast(`${state.order.length} kelime yüklendi.${draftMsg}`, draftMsg ? 5000 : 2600);
     window.onbeforeunload = () => (state.dirty ? '' : undefined);
   }
 
@@ -1179,6 +1257,7 @@
       state.editedThisSession.add(panelId);
     }
     state.dirty = true;
+    saveDraft();
     hidePanel();
     renderAll();
     toast(panelMode === 'add' ? 'Kelime eklendi (bellekte).' : 'Değişiklik kaydedildi (bellekte).');
@@ -1206,12 +1285,14 @@
       // sayardi.
     }
     state.dirty = true;
+    saveDraft();
     renderAll();
   }
 
   function restoreRow(id) {
     state.deleted.delete(id);
     state.dirty = true;
+    saveDraft();
     renderAll();
     renderDeletedModal();
   }
@@ -1254,6 +1335,7 @@
     state.editedThisSession.clear();
     for (const id of state.order) state.working.set(id, { ...state.original.get(id) });
     state.dirty = false;
+    clearDraft();
     closeAllModals();
     renderAll();
     toast('Tüm değişiklikler geri alındı.');
@@ -1449,6 +1531,7 @@
 
     state.lastSavedText = text;
     state.dirty = false;
+    clearDraft(); // artik diske yazildi, taslaga gerek kalmadi
     state.editedThisSession.clear();
     // Silinenler artik diske yazildigi icin bellekten de temizlenebilir.
     for (const id of state.deleted) { state.order = state.order.filter((x) => x !== id); state.working.delete(id); state.original.delete(id); }
