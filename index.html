@@ -526,6 +526,7 @@
         Yeni kelime
       </button>
       <button class="btn" id="btnDeletedView">Silinenler</button>
+      <button class="btn" id="btnHistory">Kayıt geçmişi</button>
       <button class="btn btn-accent" id="btnSave">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 4h11l3 3v13H5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8 4v6h8V4" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
         Diske kaydet
@@ -617,6 +618,22 @@
   </div>
 
   <!-- ============ SILINENLER MODALI ============ -->
+  <!-- ============ KAYIT GECMISI MODALI ============ -->
+  <div class="modal" id="historyModal">
+    <div class="modal-head">
+      <h2>Kayıt geçmişi</h2>
+      <button class="icon-btn" data-close-modal="historyModal">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="historyModalBody"></div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="btnClearHistory">Geçmişi temizle</button>
+      <span class="spacer"></span>
+      <button class="btn" data-close-modal="historyModal">Kapat</button>
+    </div>
+  </div>
+
   <div class="modal" id="deletedModal">
     <div class="modal-head">
       <h2>Silinenler (henüz diske yazılmadı)</h2>
@@ -1282,6 +1299,59 @@
     $$('#deletedModalBody [data-restore]').forEach((b) => b.onclick = () => restoreRow(b.dataset.restore));
   }
 
+  // ---------------------------------------------------------------- kayit gecmisi
+  //
+  // "Yazildigini nasil kontrol edecegim?" sorusuna cevap: her basarili
+  // kaydetmede buraya bir satir ekleniyor -- ne zaman, kac kelime
+  // duzenlendi/eklendi/silindi, dogrudan mi yazildi yoksa indirildi mi.
+  // Tarayicida (localStorage) kalici, dosyanin kendisinden bagimsiz.
+  const HISTORY_KEY = 'flipru_editor_history';
+
+  function loadHistory() {
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); }
+    catch { return []; }
+  }
+
+  function appendHistory(entry) {
+    let list;
+    try { list = loadHistory(); } catch { list = []; }
+    list.unshift(entry);
+    if (list.length > 200) list.length = 200;
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(list)); }
+    catch { /* ozel gezinti/depolama kapali olabilir -- sessizce gec, kaydetmeyi engellemesin */ }
+  }
+
+  function renderHistoryModal() {
+    const list = loadHistory();
+    if (!list.length) {
+      $('#historyModalBody').innerHTML = `<div class="info-box">Henüz bir kayıt geçmişi yok. "Diske kaydet" dedikçe burada birikecek.</div>`;
+      return;
+    }
+    $('#historyModalBody').innerHTML = list.map((h) => `
+      <div class="diff-row" style="align-items:flex-start">
+        <span>
+          <b class="mono" style="font-size:12px">${esc(h.when)}</b><br/>
+          <span class="who">${esc(h.fileName || 'words.json')} · ${h.direct ? 'dosyaya doğrudan yazıldı' : 'indirildi'}</span>
+        </span>
+        <span style="text-align:right; white-space:nowrap">
+          ${h.edited ? `${h.edited} düzenlendi<br/>` : ''}${h.added ? `${h.added} eklendi<br/>` : ''}${h.deleted ? `${h.deleted} silindi<br/>` : ''}
+          <span class="who">toplam ${h.total} kelime</span>
+        </span>
+      </div>
+    `).join('');
+  }
+
+  $('#btnHistory').onclick = () => {
+    renderHistoryModal();
+    $('#backdrop').classList.add('show');
+    $('#historyModal').classList.add('show');
+  };
+  $('#btnClearHistory').onclick = () => {
+    if (!confirm('Kayıt geçmişi (yalnızca bu listedeki günlük, dosyalarınız değil) silinsin mi?')) return;
+    localStorage.removeItem(HISTORY_KEY);
+    renderHistoryModal();
+  };
+
   // ---------------------------------------------------------------- diske kaydetme
   function buildOutputObject() {
     const rows = [];
@@ -1362,6 +1432,20 @@
     } else {
       downloadBlob(text, 'words.json');
     }
+
+    // Sayaclar temizlenmeden once gecmise yazilmali.
+    const addedCount = state.added.size;
+    const deletedCount = state.deleted.size;
+    const editedCount = [...state.editedThisSession].filter((id) => !state.added.has(id)).length;
+    appendHistory({
+      when: new Date().toLocaleString('tr-TR'),
+      fileName: $('#fileNameLabel').textContent,
+      edited: editedCount,
+      added: addedCount,
+      deleted: deletedCount,
+      total: output.rows.length,
+      direct: wroteDirectly,
+    });
 
     state.lastSavedText = text;
     state.dirty = false;
