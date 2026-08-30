@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Kelime Konsolu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #FAFAFB;
+    --surface: #FFFFFF;
+    --surface-2: #F2F0F8;
+    --surface-3: #EDEAF6;
+    --text: #1C1A22;
+    --text-muted: #6B6675;
+    --text-faint: #9C97A8;
+    --border: #E6E3ED;
+    --border-strong: #D3CEE0;
+    --accent: #5B54E8;
+    --accent-soft: #EEEDFC;
+    --accent-strong: #4842C4;
+    --danger: #D6336C;
+    --danger-soft: #FBE7EF;
+    --good: #0E9F6E;
+    --good-soft: #E6F8F1;
+    --warn: #B7791F;
+    --warn-soft: #FDF3E1;
+    --lvl-a1: #0E9F6E;
+    --lvl-a2: #2F8FDB;
+    --lvl-b1: #5B54E8;
+    --lvl-b2: #B7791F;
+    --lvl-c1: #D6336C;
+    --shadow: 0 1px 2px rgba(28,26,34,.05), 0 14px 34px -16px rgba(28,26,34,.20);
+    --shadow-lg: 0 24px 64px -20px rgba(28,26,34,.35);
+    color-scheme: light dark;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #131017;
+      --surface: #1A1621;
+      --surface-2: #211C2B;
+      --surface-3: #29233A;
+      --text: #EFEDF5;
+      --text-muted: #A9A3B8;
+      --text-faint: #766F87;
+      --border: #2C2735;
+      --border-strong: #3A3446;
+      --accent: #8C85FF;
+      --accent-soft: #29234A;
+      --accent-strong: #A7A1FF;
+      --danger: #F1668F;
+      --danger-soft: #3B1826;
+      --good: #34D399;
+      --good-soft: #123729;
+      --warn: #F2B84B;
+      --warn-soft: #3A2C10;
+      --lvl-a1: #34D399;
+      --lvl-a2: #7FA6F5;
+      --lvl-b1: #8C85FF;
+      --lvl-b2: #F2B84B;
+      --lvl-c1: #F1668F;
+      --shadow: 0 1px 2px rgba(0,0,0,.35), 0 14px 34px -16px rgba(0,0,0,.6);
+      --shadow-lg: 0 24px 64px -20px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #131017;
+    --surface: #1A1621;
+    --surface-2: #211C2B;
+    --surface-3: #29233A;
+    --text: #EFEDF5;
+    --text-muted: #A9A3B8;
+    --text-faint: #766F87;
+    --border: #2C2735;
+    --border-strong: #3A3446;
+    --accent: #8C85FF;
+    --accent-soft: #29234A;
+    --accent-strong: #A7A1FF;
+    --danger: #F1668F;
+    --danger-soft: #3B1826;
+    --good: #34D399;
+    --good-soft: #123729;
+    --warn: #F2B84B;
+    --warn-soft: #3A2C10;
+    --lvl-a1: #34D399;
+    --lvl-a2: #7FA6F5;
+    --lvl-b1: #8C85FF;
+    --lvl-b2: #F2B84B;
+    --lvl-c1: #F1668F;
+    --shadow: 0 1px 2px rgba(0,0,0,.35), 0 14px 34px -16px rgba(0,0,0,.6);
+    --shadow-lg: 0 24px 64px -20px rgba(0,0,0,.7);
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Inter", -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  body { display: flex; flex-direction: column; }
+
+  ::selection { background: var(--accent-soft); }
+
+  button, input, select, textarea { font-family: inherit; color: inherit; }
+  button { cursor: pointer; }
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  h1, h2, h3 { font-family: "Sora", "Inter", sans-serif; text-wrap: balance; margin: 0; }
+
+  code, .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+
+  /* ---------- ust bant ---------- */
+  .topbar {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    z-index: 20;
+  }
+  .brand { display: flex; align-items: center; gap: 9px; flex: none; }
+  .brand .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: linear-gradient(155deg, var(--accent), var(--danger));
+    flex: none;
+  }
+  .brand span {
+    font-family: "Sora", sans-serif; font-weight: 700; font-size: 15px;
+  }
+  .file-chip {
+    display: flex; align-items: center; gap: 7px;
+    padding: 5px 10px 5px 6px;
+    background: var(--surface-2);
+    border-radius: 100px;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    max-width: 220px;
+  }
+  .file-chip svg { flex: none; }
+  .file-chip .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .search-wrap { position: relative; flex: 1 1 240px; min-width: 140px; max-width: 380px; }
+  .search-wrap input {
+    width: 100%;
+    padding: 9px 12px 9px 34px;
+    border-radius: 11px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    font-size: 14px;
+  }
+  .search-wrap input:focus { border-color: var(--accent); background: var(--surface); }
+  .search-wrap svg {
+    position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+    color: var(--text-faint); pointer-events: none;
+  }
+
+  .chip-group { display: flex; gap: 5px; flex: none; }
+  .chip {
+    padding: 7px 12px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+  .chip[data-active="true"] {
+    background: var(--lvl-color, var(--accent-soft));
+    border-color: var(--lvl-color, var(--accent));
+    color: var(--lvl-color, var(--accent));
+  }
+
+  select.pill, .btn-select {
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  .spacer { flex: 1; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 14px;
+    border-radius: 11px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font-size: 13.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: transform .08s ease;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-accent { background: var(--accent); border-color: var(--accent); color: white; }
+  .btn-accent:hover { background: var(--accent-strong); }
+  .btn-ghost { background: transparent; border-color: transparent; color: var(--text-muted); }
+  .btn-ghost:hover { background: var(--surface-2); }
+  .btn-danger { background: var(--danger-soft); border-color: transparent; color: var(--danger); }
+  .btn[disabled] { opacity: .45; pointer-events: none; }
+
+  /* ---------- ozet seridi ---------- */
+  .stats-strip {
+    flex: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .stat-pill {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 11px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--surface-2);
+    color: var(--text-muted);
+    border: 1px solid transparent;
+  }
+  .stat-pill b { font-variant-numeric: tabular-nums; color: var(--text); }
+  .stat-pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .stat-pill.warn b { color: var(--warn); }
+  .stat-pill.danger { background: var(--danger-soft); color: var(--danger); }
+  .stat-pill.danger b { color: var(--danger); }
+  .stat-pill.active { outline: 1.5px solid currentColor; }
+  .stat-pill:hover { filter: brightness(0.97); }
+  :root[data-theme="dark"] .stat-pill:hover,
+  @media (prefers-color-scheme: dark) { .stat-pill:hover { filter: brightness(1.15); } }
+
+  /* ---------- govde ---------- */
+  .main { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+  .empty-state {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    padding: 40px;
+  }
+  .empty-card {
+    max-width: 460px;
+    text-align: center;
+    padding: 40px 32px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    box-shadow: var(--shadow);
+  }
+  .empty-card .glyph {
+    width: 64px; height: 64px; margin: 0 auto 18px;
+    border-radius: 18px;
+    background: var(--accent-soft);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .empty-card h1 { font-size: 21px; margin-bottom: 8px; }
+  .empty-card p { color: var(--text-muted); font-size: 14.5px; line-height: 1.6; margin: 0 0 22px; }
+  .empty-card .hint { font-size: 12.5px; color: var(--text-faint); margin-top: 14px; }
+
+  .table-scroll { flex: 1; overflow: auto; padding: 0 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  thead th {
+    position: sticky; top: 0; z-index: 5;
+    background: var(--bg);
+    text-align: left;
+    font-size: 11px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    font-weight: 700;
+    padding: 12px 10px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  tbody tr { border-bottom: 1px solid var(--border); }
+  tbody tr:hover { background: var(--surface-2); }
+  tbody tr.is-edited { background: var(--accent-soft); }
+  tbody tr.is-added { background: var(--good-soft); }
+  tbody td { padding: 9px 10px; vertical-align: top; }
+  td.id-col { color: var(--text-faint); font-size: 11.5px; white-space: nowrap; }
+  td.ru-col .accented { font-size: 15px; }
+  td.ru-col .translit { display: block; color: var(--text-faint); font-size: 11.5px; margin-top: 2px; }
+  td.tr-col { color: var(--text); max-width: 220px; }
+  .lvl-badge {
+    display: inline-flex; align-items: center;
+    padding: 2px 8px;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    background: color-mix(in srgb, var(--lvl-color) 15%, transparent);
+    color: var(--lvl-color);
+  }
+  .theme-text { color: var(--text-muted); font-size: 12.5px; }
+  .theme-text.empty { color: var(--text-faint); font-style: italic; }
+  .badges { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+  .badge-dot {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 1px 6px;
+    border-radius: 6px;
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: help;
+  }
+  .badge-dot.warn { background: var(--warn-soft); color: var(--warn); }
+  .badge-dot.danger { background: var(--danger-soft); color: var(--danger); }
+  .row-actions { display: flex; gap: 4px; justify-content: flex-end; }
+  .icon-btn {
+    width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 9px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-faint);
+  }
+  .icon-btn:hover { background: var(--surface-3); color: var(--text); }
+  .icon-btn.danger:hover { background: var(--danger-soft); color: var(--danger); }
+
+  .pagebar {
+    flex: none;
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+    padding: 12px 20px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .pagebar b { color: var(--text); font-variant-numeric: tabular-nums; }
+
+  /* ---------- backdrop + panel ---------- */
+  .backdrop {
+    position: fixed; inset: 0;
+    background: rgba(10, 8, 16, .45);
+    opacity: 0; pointer-events: none;
+    transition: opacity .18s ease;
+    z-index: 40;
+  }
+  .backdrop.show { opacity: 1; pointer-events: auto; }
+
+  .panel {
+    position: fixed; top: 0; right: 0; bottom: 0;
+    width: min(440px, 100vw);
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    transform: translateX(100%);
+    transition: transform .22s cubic-bezier(.2,.8,.2,1);
+    z-index: 50;
+    display: flex; flex-direction: column;
+  }
+  .panel.show { transform: translateX(0); }
+  .panel-head {
+    flex: none;
+    display: flex; align-items: center; gap: 10px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .panel-head h2 { font-size: 17px; flex: 1; }
+  .panel-body { flex: 1; overflow-y: auto; padding: 18px 20px 8px; }
+  .panel-foot {
+    flex: none; display: flex; gap: 8px;
+    padding: 14px 20px; border-top: 1px solid var(--border);
+  }
+  .field { margin-bottom: 15px; }
+  .field label {
+    display: block; font-size: 11.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .03em;
+    color: var(--text-faint); margin-bottom: 6px;
+  }
+  .field input, .field select, .field textarea {
+    width: 100%;
+    padding: 9px 11px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    font-size: 14px;
+  }
+  .field textarea { resize: vertical; min-height: 52px; line-height: 1.45; }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); background: var(--surface); }
+  .field-row { display: flex; gap: 10px; }
+  .field-row .field { flex: 1; }
+  .old-value {
+    margin-top: 5px;
+    font-size: 11.5px;
+    color: var(--text-faint);
+    display: flex; gap: 5px; align-items: baseline;
+  }
+  .old-value .tag {
+    font-weight: 700; text-transform: uppercase; font-size: 9.5px;
+    letter-spacing: .04em; color: var(--warn);
+    background: var(--warn-soft); padding: 1px 5px; border-radius: 5px;
+  }
+  .old-value s { color: var(--text-faint); }
+
+  /* ---------- modal ---------- */
+  .modal {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -46%);
+    width: min(560px, 92vw);
+    max-height: 82vh;
+    background: var(--surface);
+    border-radius: 20px;
+    box-shadow: var(--shadow-lg);
+    z-index: 60;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .modal.show { display: flex; }
+  .modal-head { flex: none; display: flex; align-items: center; gap: 10px; padding: 18px 20px; border-bottom: 1px solid var(--border); }
+  .modal-head h2 { font-size: 16px; flex: 1; }
+  .modal-body { flex: 1; overflow-y: auto; padding: 18px 20px; }
+  .modal-foot { flex: none; display: flex; gap: 8px; padding: 14px 20px; border-top: 1px solid var(--border); }
+
+  .diff-row { display: flex; justify-content: space-between; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .diff-row:last-child { border-bottom: none; }
+  .diff-row .who { color: var(--text-muted); }
+
+  .float-btn {
+    position: fixed; right: 22px; bottom: 22px;
+    z-index: 30;
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 16px;
+    border-radius: 100px;
+    background: var(--accent);
+    color: white;
+    box-shadow: var(--shadow-lg);
+    font-weight: 700;
+    font-size: 13.5px;
+    border: none;
+  }
+  .float-btn .count {
+    background: rgba(255,255,255,.25);
+    border-radius: 100px;
+    padding: 1px 8px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 20px);
+    background: var(--text); color: var(--bg);
+    padding: 10px 18px; border-radius: 100px;
+    font-size: 13px; font-weight: 600;
+    opacity: 0; pointer-events: none;
+    transition: all .22s ease;
+    z-index: 80;
+    box-shadow: var(--shadow-lg);
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  .error-box {
+    background: var(--danger-soft); color: var(--danger);
+    border-radius: 12px; padding: 12px 14px; font-size: 13px;
+    margin-bottom: 14px; line-height: 1.5;
+  }
+  .info-box {
+    background: var(--surface-2); color: var(--text-muted);
+    border-radius: 12px; padding: 12px 14px; font-size: 12.5px;
+    margin-bottom: 4px; line-height: 1.55;
+  }
+
+  textarea.json-out {
+    width: 100%; min-height: 160px;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11.5px;
+    padding: 10px; border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    resize: vertical;
+  }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  @media (max-width: 720px) {
+    .topbar { flex-wrap: wrap; }
+    .chip-group { order: 3; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- ============ UST BANT ============ -->
+  <div class="topbar">
+    <div class="brand">
+      <span class="dot"></span>
+      <span>Kelime Konsolu</span>
+    </div>
+    <div id="fileChip" class="file-chip" style="display:none">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 2h9l5 5v15H6z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+      <span class="name" id="fileNameLabel">—</span>
+    </div>
+
+    <div id="toolbarControls" style="display:none; gap:14px; align-items:center; flex:1; flex-wrap:wrap;">
+      <div class="search-wrap">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input id="searchInput" type="text" placeholder="Kelime, id ya da çeviri ara…" />
+      </div>
+      <div class="chip-group" id="levelChips"></div>
+      <select id="themeSelect" class="pill"></select>
+      <select id="maintSelect" class="pill">
+        <option value="">Bakım: hepsi</option>
+        <option value="accentless">Vurgu işareti eksik</option>
+        <option value="badTranslit">Transkripsiyon formatı bozuk</option>
+        <option value="noExample">Örnek cümle yok</option>
+        <option value="emptyCore">Temel alan eksik</option>
+        <option value="duplicate">Olası kopya</option>
+        <option value="edited">Bu oturumda düzenlendi</option>
+      </select>
+      <span class="spacer"></span>
+      <button class="btn" id="btnAdd">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        Yeni kelime
+      </button>
+      <button class="btn" id="btnDeletedView">Silinenler</button>
+      <button class="btn btn-accent" id="btnSave">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 4h11l3 3v13H5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8 4v6h8V4" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+        Diske kaydet
+      </button>
+    </div>
+
+    <span class="spacer" id="topbarSpacer"></span>
+    <button class="btn btn-accent" id="btnOpen">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+      Dosya aç
+    </button>
+  </div>
+
+  <!-- ============ OZET SERIDI ============ -->
+  <div class="stats-strip" id="statsStrip" style="display:none"></div>
+
+  <div class="main">
+    <!-- ============ BOS DURUM ============ -->
+    <div class="empty-state" id="emptyState">
+      <div class="empty-card">
+        <div class="glyph">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M6 2h9l5 5v15H6z" stroke="var(--accent)" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 12h6M9 16h6" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <h1>Kelime dosyanızı açın</h1>
+        <p>FlipRU'nun <code>assets/data/words.json</code> dosyasını seçin. Bu araç değişikliği doğrudan aynı dosyaya yazar — kopyalama ya da indirme gerekmez.</p>
+        <button class="btn btn-accent" id="btnOpenBig" style="width:100%; justify-content:center; padding:12px;">Dosya aç</button>
+        <p class="hint" id="apiHint"></p>
+      </div>
+    </div>
+
+    <!-- ============ TABLO ============ -->
+    <div class="table-scroll" id="tableScroll" style="display:none">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">ID</th>
+            <th style="width:26%">Rusça</th>
+            <th>Türkçe</th>
+            <th style="width:70px">Seviye</th>
+            <th style="width:14%">Tema</th>
+            <th style="width:76px"></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="pagebar" id="pagebar" style="display:none"></div>
+  </div>
+
+  <!-- ============ DEGISIKLIKLER YUZEN BUTON ============ -->
+  <button class="float-btn" id="btnChanges" style="display:none">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 4v6h6M20 20v-6h-6" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 10a8 8 0 0 0-14.9-3.5M4 14a8 8 0 0 0 14.9 3.5" stroke="white" stroke-width="2.2" stroke-linecap="round"/></svg>
+    <span id="changesLabel">0 değişiklik</span>
+  </button>
+
+  <div class="backdrop" id="backdrop"></div>
+
+  <!-- ============ DUZENLEME PANELI ============ -->
+  <div class="panel" id="editPanel">
+    <div class="panel-head">
+      <h2 id="panelTitle">Kelimeyi düzenle</h2>
+      <button class="icon-btn" id="panelClose">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="panel-body" id="panelBody"></div>
+    <div class="panel-foot">
+      <button class="btn btn-danger" id="btnDeleteRow" style="display:none">Sil</button>
+      <span class="spacer"></span>
+      <button class="btn" id="btnPanelCancel">Vazgeç</button>
+      <button class="btn btn-accent" id="btnPanelSave">Kaydet</button>
+    </div>
+  </div>
+
+  <!-- ============ DEGISIKLIKLER MODALI ============ -->
+  <div class="modal" id="changesModal">
+    <div class="modal-head">
+      <h2>Bu oturumdaki değişiklikler</h2>
+      <button class="icon-btn" data-close-modal="changesModal">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="changesModalBody"></div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="btnResetAll">Tümünü geri al</button>
+      <span class="spacer"></span>
+      <button class="btn" id="btnCopyJson">JSON'u kopyala</button>
+    </div>
+  </div>
+
+  <!-- ============ SILINENLER MODALI ============ -->
+  <div class="modal" id="deletedModal">
+    <div class="modal-head">
+      <h2>Silinenler (henüz diske yazılmadı)</h2>
+      <button class="icon-btn" data-close-modal="deletedModal">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="deletedModalBody"></div>
+    <div class="modal-foot">
+      <span class="spacer"></span>
+      <button class="btn" data-close-modal="deletedModal">Kapat</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ======================================================================
+  // DURUM
+  //
+  // Diske otomatik yazma yok: bir kelimeyi duzenlemek yalnizca bellekteki
+  // `working` haritasini gunceller. Dosyaya yazma tek, ayri bir adim
+  // ("Diske kaydet") -- boylece 40 kucuk duzeltme yapip tek seferde
+  // kaydedebiliyorsunuz, her tik diske yazmiyor.
+  // ======================================================================
+  const state = {
+    handle: null,          // FileSystemFileHandle | null (dogrudan yazma icin)
+    fields: [],            // orijinal alan sirasi
+    order: [],             // satir sirasi (id listesi) -- frekans sirasini korur
+    original: new Map(),   // id -> ilk yuklenen hali (karsilastirma icin, degismez)
+    working: new Map(),    // id -> guncel hali
+    deleted: new Set(),
+    added: new Set(),      // working icinde olup original'de olmayan id'ler
+    editedThisSession: new Set(),
+    lastSavedText: null,   // en son diske yazilan/yuklenen ham metin (yedek icin)
+    dirty: false,
+  };
+
+  const ui = {
+    search: '',
+    level: '',
+    theme: '',
+    maint: '',
+    page: 1,
+    pageSize: 50,
+  };
+
+  const LEVELS = ['a1', 'a2', 'b1', 'b2', 'c1'];
+  const VOWELS = 'аеиоуыэюя'; // ё haric: ё zaten vurguyu tasir, ayri isaret gerekmez
+  const CORE_FIELDS = ['id', 'ru', 'tr'];
+
+  // ---------------------------------------------------------------- yardimcilar
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+  const esc = (s) => (s ?? '').toString().replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+
+  function toast(msg, ms = 2600) {
+    const el = $('#toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => el.classList.remove('show'), ms);
+  }
+
+  function syllableCount(s) {
+    let n = 0;
+    for (const ch of (s || '').toLowerCase()) if (VOWELS.includes(ch)) n++;
+    return n;
+  }
+
+  function stripAccent(s) {
+    // Vurgu isareti (U+0301, birlesik akut) atilmis, normalize edilmis hal --
+    // kopya tespitinde "приве́т" ile "привет" ayni kelime sayilsin diye.
+    return (s || '').normalize('NFC').replace(/́/g, '').toLowerCase().trim();
+  }
+
+  function fieldVal(word, f) { return word && word[f] != null ? word[f] : ''; }
+
+  // ---------------------------------------------------------------- dosya acma
+  const supportsFsAccess = 'showOpenFilePicker' in window;
+
+  $('#apiHint').textContent = supportsFsAccess
+    ? 'Doğrudan diske yazabilmek için Chrome ya da Edge kullanın.'
+    : 'Bu tarayıcı doğrudan diske yazmayı desteklemiyor (Chrome/Edge önerilir); kaydettiğinizde dosya indirilecek, elle taşımanız gerekir.';
+
+  async function openFile() {
+    try {
+      if (supportsFsAccess) {
+        const [handle] = await window.showOpenFilePicker({
+          types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+        });
+        const file = await handle.getFile();
+        const text = await file.text();
+        state.handle = handle;
+        loadText(text, file.name);
+      } else {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json,application/json';
+        input.onchange = async () => {
+          const file = input.files[0];
+          if (!file) return;
+          const text = await file.text();
+          state.handle = null;
+          loadText(text, file.name);
+        };
+        input.click();
+      }
+    } catch (err) {
+      if (err && err.name === 'AbortError') return; // kullanici vazgecti
+      showFatal('Dosya açılamadı: ' + err.message);
+    }
+  }
+
+  function loadText(text, name) {
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (err) {
+      showFatal('Bu dosya geçerli bir JSON değil: ' + err.message);
+      return;
+    }
+    if (!data || !Array.isArray(data.fields) || !Array.isArray(data.rows)) {
+      showFatal('Dosyanın yapısı beklenenden farklı: "fields" ve "rows" alanları bulunamadı. Yanlış dosya seçmiş olabilir misiniz?');
+      return;
+    }
+    const idIdx = data.fields.indexOf('id');
+    if (idIdx === -1) {
+      showFatal('Dosyada "id" alanı bulunamadı.');
+      return;
+    }
+    // Her satirin uzunlugunu dogrula -- bozuk bir satir sessizce ic ice
+    // kaymasin.
+    for (let i = 0; i < data.rows.length; i++) {
+      if (!Array.isArray(data.rows[i]) || data.rows[i].length !== data.fields.length) {
+        showFatal(`${i + 1}. satır bozuk görünüyor (alan sayısı uyuşmuyor). Dosya değiştirilmeden bırakıldı.`);
+        return;
+      }
+    }
+
+    state.fields = data.fields;
+    state.order = [];
+    state.original = new Map();
+    state.working = new Map();
+    state.deleted = new Set();
+    state.added = new Set();
+    state.editedThisSession = new Set();
+    state.lastSavedText = text;
+    state.dirty = false;
+
+    const seen = new Set();
+    for (const row of data.rows) {
+      const obj = {};
+      data.fields.forEach((f, i) => { obj[f] = row[i]; });
+      const id = obj.id;
+      if (!id || seen.has(id)) continue; // bos/mukerrer id'yi sessizce atlamak yerine son yazandan kazanmasin
+      seen.add(id);
+      state.order.push(id);
+      state.original.set(id, obj);
+      state.working.set(id, { ...obj });
+    }
+
+    $('#fileChip').style.display = 'flex';
+    $('#fileNameLabel').textContent = name;
+    $('#toolbarControls').style.display = 'flex';
+    $('#topbarSpacer').style.display = 'none';
+    $('#emptyState').style.display = 'none';
+    $('#tableScroll').style.display = 'block';
+    $('#pagebar').style.display = 'flex';
+    $('#statsStrip').style.display = 'flex';
+
+    buildThemeOptions();
+    ui.page = 1;
+    renderAll();
+    toast(`${state.order.length} kelime yüklendi.`);
+    window.onbeforeunload = () => (state.dirty ? '' : undefined);
+  }
+
+  function showFatal(msg) {
+    alert(msg); // basit ama net: yanlis/bozuk dosyada islem durmali, sessiz kalmamali
+  }
+
+  // ---------------------------------------------------------------- sorun tespiti
+  function computeIssues(id, word, dupIds) {
+    const issues = [];
+    if (!word.id || !word.ru || !word.tr) issues.push('emptyCore');
+    if (word.ru && syllableCount(word.ru) > 1 && word.accented === word.ru) {
+      issues.push('accentless');
+    }
+    const t = word.translit || '';
+    if (t && syllableCount(word.ru || '') > 1) {
+      const looksFormatted = /-/.test(t) || /^[A-ZÇĞİÖŞÜ]+$/.test(t);
+      if (!looksFormatted) issues.push('badTranslit');
+    }
+    if (/^yi-|^Yi-|^YI-/.test(t)) issues.push('badTranslit');
+    if (!word.exRu) issues.push('noExample');
+    if (dupIds && dupIds.has(id)) issues.push('duplicate');
+    if (state.editedThisSession.has(id)) issues.push('edited');
+    return issues;
+  }
+
+  function computeDuplicates() {
+    const groups = new Map(); // normalize edilmis ru -> [id...]
+    for (const id of state.order) {
+      if (state.deleted.has(id)) continue;
+      const w = state.working.get(id);
+      const key = stripAccent(w.ru);
+      if (!key) continue;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(id);
+    }
+    const dupIds = new Set();
+    const dupPartners = new Map();
+    for (const ids of groups.values()) {
+      if (ids.length > 1) {
+        ids.forEach((id) => dupIds.add(id));
+        ids.forEach((id) => dupPartners.set(id, ids.filter((x) => x !== id)));
+      }
+    }
+    return { dupIds, dupPartners };
+  }
+
+  // ---------------------------------------------------------------- listeleme
+  function buildThemeOptions() {
+    const themes = new Set();
+    for (const id of state.order) themes.add(state.working.get(id).theme || '');
+    const sorted = [...themes].filter(Boolean).sort();
+    const sel = $('#themeSelect');
+    sel.innerHTML = '<option value="">Tema: hepsi</option><option value="__none__">(tema yok)</option>'
+      + sorted.map((t) => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+  }
+
+  function buildLevelChips() {
+    const wrap = $('#levelChips');
+    const all = [{ v: '', label: 'Tümü' }, ...LEVELS.map((l) => ({ v: l, label: l.toUpperCase() }))];
+    wrap.innerHTML = all.map((l) => `
+      <button class="chip" data-level="${l.v}" data-active="${ui.level === l.v}"
+        style="${l.v ? `--lvl-color:var(--lvl-${l.v})` : ''}">${l.label}</button>
+    `).join('');
+    wrap.querySelectorAll('[data-level]').forEach((btn) => {
+      btn.onclick = () => { ui.level = btn.dataset.level; ui.page = 1; renderAll(); };
+    });
+  }
+
+  function getFiltered() {
+    const { dupIds } = computeDuplicates();
+    const q = ui.search.trim().toLowerCase();
+    const out = [];
+    for (const id of state.order) {
+      if (state.deleted.has(id)) continue;
+      const w = state.working.get(id);
+      if (ui.level && w.level !== ui.level) continue;
+      if (ui.theme === '__none__' && w.theme) continue;
+      if (ui.theme && ui.theme !== '__none__' && w.theme !== ui.theme) continue;
+      if (q) {
+        const hay = `${w.id} ${w.ru} ${w.accented} ${w.tr}`.toLowerCase();
+        if (!hay.includes(q)) continue;
+      }
+      const issues = computeIssues(id, w, dupIds);
+      if (ui.maint && !issues.includes(ui.maint)) continue;
+      out.push({ id, w, issues });
+    }
+    return out;
+  }
+
+  function renderStats() {
+    const total = state.order.length - state.deleted.size;
+    const { dupIds } = computeDuplicates();
+    let accentless = 0, badTranslit = 0, noExample = 0, emptyCore = 0;
+    for (const id of state.order) {
+      if (state.deleted.has(id)) continue;
+      const issues = computeIssues(id, state.working.get(id), dupIds);
+      if (issues.includes('accentless')) accentless++;
+      if (issues.includes('badTranslit')) badTranslit++;
+      if (issues.includes('noExample')) noExample++;
+      if (issues.includes('emptyCore')) emptyCore++;
+    }
+    const pills = [
+      { key: '', cls: '', label: 'Toplam', val: total },
+      { key: 'emptyCore', cls: 'danger', label: 'Temel alan eksik', val: emptyCore },
+      { key: 'accentless', cls: 'warn', label: 'Vurgu eksik', val: accentless },
+      { key: 'badTranslit', cls: 'warn', label: 'Okunuş bozuk', val: badTranslit },
+      { key: 'duplicate', cls: 'warn', label: 'Olası kopya', val: dupIds.size },
+      { key: 'noExample', cls: '', label: 'Örneksiz', val: noExample },
+    ];
+    $('#statsStrip').innerHTML = pills.map((p) => `
+      <button class="stat-pill ${p.cls} ${ui.maint === p.key && p.key ? 'active' : ''}" data-maint="${p.key}">
+        ${esc(p.label)} <b>${p.val}</b>
+      </button>
+    `).join('');
+    $$('#statsStrip [data-maint]').forEach((btn) => {
+      btn.onclick = () => {
+        const k = btn.dataset.maint;
+        ui.maint = (ui.maint === k) ? '' : k;
+        $('#maintSelect').value = ui.maint;
+        ui.page = 1;
+        renderAll();
+      };
+    });
+  }
+
+  const ISSUE_LABEL = {
+    accentless: 'Vurgu işareti yok',
+    badTranslit: 'Okunuş (translit) formatı bozuk görünüyor',
+    noExample: 'Örnek cümle yok',
+    emptyCore: 'id / Rusça / Türkçe alanlarından biri boş',
+    duplicate: 'Aynı Rusça kelimeyle başka bir kayıt daha var',
+    edited: 'Bu oturumda düzenlendi',
+  };
+
+  function renderTable() {
+    const filtered = getFiltered();
+    const totalPages = Math.max(1, Math.ceil(filtered.length / ui.pageSize));
+    ui.page = Math.min(ui.page, totalPages);
+    const start = (ui.page - 1) * ui.pageSize;
+    const pageItems = filtered.slice(start, start + ui.pageSize);
+
+    $('#tbody').innerHTML = pageItems.map(({ id, w, issues }) => {
+      const rowCls = state.added.has(id) ? 'is-added' : (state.editedThisSession.has(id) ? 'is-edited' : '');
+      const badges = issues.filter((i) => i !== 'edited').map((i) => {
+        const cls = i === 'emptyCore' ? 'danger' : 'warn';
+        return `<span class="badge-dot ${cls}" title="${esc(ISSUE_LABEL[i])}">${i === 'duplicate' ? '⧉' : '!'}</span>`;
+      }).join('');
+      const lvl = (w.level || '').toLowerCase();
+      return `
+        <tr class="${rowCls}" data-id="${esc(id)}">
+          <td class="id-col mono">${esc(id)}</td>
+          <td class="ru-col">
+            <span class="accented">${esc(w.accented || w.ru)}</span>
+            <span class="translit mono">${esc(w.translit || '')}</span>
+          </td>
+          <td class="tr-col">
+            ${esc(w.tr)}
+            <div class="badges">${badges}</div>
+          </td>
+          <td>${lvl ? `<span class="lvl-badge" style="--lvl-color:var(--lvl-${lvl})">${lvl}</span>` : ''}</td>
+          <td><span class="theme-text ${w.theme ? '' : 'empty'}">${esc(w.theme || 'yok')}</span></td>
+          <td>
+            <div class="row-actions">
+              <button class="icon-btn" data-edit="${esc(id)}" title="Düzenle">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 20l1-4L16 5l3 3L8 19l-4 1z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+              </button>
+              <button class="icon-btn danger" data-del="${esc(id)}" title="Sil">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 7h14M9 7V5h6v2M7 7l1 13h8l1-13" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('') || `<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--text-faint)">Filtreyle eşleşen kelime yok.</td></tr>`;
+
+    $$('#tbody [data-edit]').forEach((b) => b.onclick = () => openPanel(b.dataset.edit));
+    $$('#tbody [data-del]').forEach((b) => b.onclick = () => deleteRow(b.dataset.del));
+
+    $('#pagebar').innerHTML = `
+      <button class="btn btn-ghost" id="pgPrev" ${ui.page <= 1 ? 'disabled' : ''}>‹ Önceki</button>
+      <span>Sayfa <b>${ui.page}</b> / ${totalPages} &nbsp;·&nbsp; <b>${filtered.length}</b> kelime listelendi</span>
+      <button class="btn btn-ghost" id="pgNext" ${ui.page >= totalPages ? 'disabled' : ''}>Sonraki ›</button>
+    `;
+    $('#pgPrev').onclick = () => { ui.page--; renderTable(); };
+    $('#pgNext').onclick = () => { ui.page++; renderTable(); };
+  }
+
+  function renderChangesButton() {
+    const n = state.editedThisSession.size + state.deleted.size;
+    $('#btnChanges').style.display = n ? 'flex' : 'none';
+    $('#changesLabel').textContent = `${n} değişiklik`;
+  }
+
+  function renderAll() {
+    renderStats();
+    renderTable();
+    renderChangesButton();
+  }
+
+  // ---------------------------------------------------------------- olaylar: filtreler
+  $('#searchInput').addEventListener('input', (e) => { ui.search = e.target.value; ui.page = 1; renderTable(); });
+  $('#themeSelect').addEventListener('change', (e) => { ui.theme = e.target.value; ui.page = 1; renderTable(); });
+  $('#maintSelect').addEventListener('change', (e) => { ui.maint = e.target.value; ui.page = 1; renderAll(); });
+
+  // ---------------------------------------------------------------- duzenleme paneli
+  const FIELD_DEFS = [
+    { key: 'ru', label: 'Rusça (sözlük biçimi)' },
+    { key: 'accented', label: 'Vurgulu hâli' },
+    { key: 'translit', label: 'Okunuş (translit)' },
+    { key: 'tr', label: 'Türkçe karşılık' },
+    { key: 'pos', label: 'Sözcük türü', select: ['noun', 'verb', 'adjective', 'adverb', 'preposition', 'interjection', 'numeral', 'other'] },
+    { key: 'level', label: 'Seviye', select: LEVELS },
+    { key: 'theme', label: 'Tema' },
+    { key: 'exRu', label: 'Örnek cümle (Rusça)', textarea: true },
+    { key: 'exTr', label: 'Örnek cümle (Türkçe)', textarea: true },
+  ];
+
+  let panelMode = null; // 'edit' | 'add'
+  let panelId = null;
+
+  function openPanel(id) {
+    panelMode = 'edit';
+    panelId = id;
+    const w = state.working.get(id);
+    const original = state.original.get(id);
+    $('#panelTitle').textContent = `Kelimeyi düzenle · ${id}`;
+    $('#btnDeleteRow').style.display = 'inline-flex';
+    renderPanelBody(w, original);
+    showPanel();
+  }
+
+  function openAddPanel() {
+    panelMode = 'add';
+    panelId = null;
+    $('#panelTitle').textContent = 'Yeni kelime ekle';
+    $('#btnDeleteRow').style.display = 'none';
+    renderPanelBody({ ru: '', accented: '', translit: '', tr: '', pos: 'noun', level: 'a1', theme: '', exRu: '', exTr: '' }, null);
+    showPanel();
+  }
+
+  function renderPanelBody(w, original) {
+    $('#panelBody').innerHTML = FIELD_DEFS.map((f) => {
+      const val = fieldVal(w, f.key);
+      const changed = original && (original[f.key] || '') !== val;
+      let input;
+      if (f.select) {
+        input = `<select data-f="${f.key}">${f.select.map((v) => `<option value="${v}" ${v === val ? 'selected' : ''}>${v}</option>`).join('')}</select>`;
+      } else if (f.textarea) {
+        input = `<textarea data-f="${f.key}">${esc(val)}</textarea>`;
+      } else {
+        input = `<input data-f="${f.key}" type="text" value="${esc(val)}" />`;
+      }
+      const oldHint = changed
+        ? `<div class="old-value"><span class="tag">önce</span><s>${esc(original[f.key] || '(boş)')}</s></div>`
+        : '';
+      return `<div class="field"><label>${f.label}</label>${input}${oldHint}</div>`;
+    }).join('');
+  }
+
+  function readPanelValues() {
+    const out = {};
+    $$('#panelBody [data-f]').forEach((el) => { out[el.dataset.f] = el.value.trim(); });
+    return out;
+  }
+
+  function showPanel() {
+    $('#backdrop').classList.add('show');
+    $('#editPanel').classList.add('show');
+  }
+  function hidePanel() {
+    $('#backdrop').classList.remove('show');
+    $('#editPanel').classList.remove('show');
+  }
+  $('#panelClose').onclick = hidePanel;
+  $('#btnPanelCancel').onclick = hidePanel;
+  $('#backdrop').onclick = () => { hidePanel(); closeAllModals(); };
+
+  function nextId() {
+    let max = 0;
+    const scan = (id) => {
+      const m = /^w0*(\d+)$/.exec(id || '');
+      if (m) max = Math.max(max, parseInt(m[1], 10));
+    };
+    state.order.forEach(scan);
+    state.added.forEach(scan);
+    return 'w' + String(max + 1).padStart(5, '0');
+  }
+
+  $('#btnPanelSave').onclick = () => {
+    const values = readPanelValues();
+    if (!values.ru || !values.tr) {
+      toast('Rusça ve Türkçe alanları boş bırakılamaz.');
+      return;
+    }
+    if (panelMode === 'add') {
+      const id = nextId();
+      const word = { id, ru: '', accented: '', translit: '', tr: '', pos: 'noun', level: 'a1', theme: '', exRu: '', exTr: '', ...values };
+      state.fields.forEach((f) => { if (!(f in word)) word[f] = ''; });
+      state.order.push(id);
+      state.working.set(id, word);
+      state.added.add(id);
+      state.editedThisSession.add(id);
+    } else {
+      const w = state.working.get(panelId);
+      Object.assign(w, values);
+      state.editedThisSession.add(panelId);
+    }
+    state.dirty = true;
+    hidePanel();
+    renderAll();
+    toast(panelMode === 'add' ? 'Kelime eklendi (bellekte).' : 'Değişiklik kaydedildi (bellekte).');
+  };
+
+  $('#btnDeleteRow').onclick = () => {
+    if (panelId) { deleteRow(panelId); hidePanel(); }
+  };
+
+  $('#btnAdd').onclick = openAddPanel;
+  $('#btnOpen').onclick = openFile;
+  $('#btnOpenBig').onclick = openFile;
+
+  function deleteRow(id) {
+    if (state.added.has(id)) {
+      // Hic diske yazilmamis bir ekleme: tamamen sil, "silinenler"e dusmesin.
+      state.order = state.order.filter((x) => x !== id);
+      state.working.delete(id);
+      state.added.delete(id);
+      state.editedThisSession.delete(id);
+    } else {
+      state.deleted.add(id);
+      state.editedThisSession.add(id);
+    }
+    state.dirty = true;
+    renderAll();
+  }
+
+  function restoreRow(id) {
+    state.deleted.delete(id);
+    state.dirty = true;
+    renderAll();
+    renderDeletedModal();
+  }
+
+  // ---------------------------------------------------------------- degisiklikler modali
+  function closeAllModals() {
+    $$('.modal').forEach((m) => m.classList.remove('show'));
+    $('#backdrop').classList.remove('show');
+  }
+  $$('[data-close-modal]').forEach((b) => b.onclick = closeAllModals);
+
+  $('#btnChanges').onclick = () => {
+    renderChangesModal();
+    $('#backdrop').classList.add('show');
+    $('#changesModal').classList.add('show');
+  };
+
+  function renderChangesModal() {
+    const rows = [];
+    for (const id of state.editedThisSession) {
+      if (state.deleted.has(id)) continue;
+      const isNew = state.added.has(id);
+      const w = state.working.get(id);
+      rows.push(`<div class="diff-row"><span>${esc(id)} · ${esc(w.ru)}</span><span class="who">${isNew ? 'yeni eklendi' : 'düzenlendi'}</span></div>`);
+    }
+    for (const id of state.deleted) {
+      const w = state.original.get(id) || state.working.get(id);
+      rows.push(`<div class="diff-row"><span>${esc(id)} · ${esc(w.ru)}</span><span class="who">silinecek</span></div>`);
+    }
+    $('#changesModalBody').innerHTML = rows.length
+      ? rows.join('')
+      : `<div class="info-box">Henüz bir değişiklik yok.</div>`;
+  }
+
+  $('#btnResetAll').onclick = () => {
+    if (!confirm('Bu oturumdaki tüm düzenleme, ekleme ve silmeler geri alınsın mı? Diske hiçbir şey yazılmadı, yalnızca bellek sıfırlanacak.')) return;
+    for (const id of state.added) { state.order = state.order.filter((x) => x !== id); state.working.delete(id); }
+    state.added.clear();
+    state.deleted.clear();
+    state.editedThisSession.clear();
+    for (const id of state.order) state.working.set(id, { ...state.original.get(id) });
+    state.dirty = false;
+    closeAllModals();
+    renderAll();
+    toast('Tüm değişiklikler geri alındı.');
+  };
+
+  $('#btnCopyJson').onclick = async () => {
+    const output = buildOutputObject();
+    const text = JSON.stringify(output);
+    try {
+      await navigator.clipboard.writeText(text);
+      toast('JSON panoya kopyalandı.');
+    } catch {
+      // Panoya erisim engellenmis olabilir (izin, http baglami vb.) --
+      // sessizce basarisiz olmak yerine metni gosterip elle kopyalattiriyoruz.
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;top:-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); toast('JSON panoya kopyalandı.'); }
+      catch { alert('Kopyalama başarısız oldu. Aşağıdaki alanı elle seçip kopyalayın.'); showJsonFallback(text); }
+      document.body.removeChild(ta);
+    }
+  };
+
+  function showJsonFallback(text) {
+    $('#changesModalBody').innerHTML = `<textarea class="json-out" readonly>${esc(text)}</textarea>`;
+  }
+
+  // ---------------------------------------------------------------- silinenler modali
+  $('#btnDeletedView').onclick = () => {
+    renderDeletedModal();
+    $('#backdrop').classList.add('show');
+    $('#deletedModal').classList.add('show');
+  };
+  function renderDeletedModal() {
+    const rows = [...state.deleted].map((id) => {
+      const w = state.original.get(id) || state.working.get(id);
+      return `<div class="diff-row"><span>${esc(id)} · ${esc(w.ru)} → ${esc(w.tr)}</span>
+        <button class="btn btn-ghost" data-restore="${esc(id)}" style="padding:4px 10px">Geri al</button></div>`;
+    });
+    $('#deletedModalBody').innerHTML = rows.length ? rows.join('') : `<div class="info-box">Silinmiş kelime yok.</div>`;
+    $$('#deletedModalBody [data-restore]').forEach((b) => b.onclick = () => restoreRow(b.dataset.restore));
+  }
+
+  // ---------------------------------------------------------------- diske kaydetme
+  function buildOutputObject() {
+    const rows = [];
+    for (const id of state.order) {
+      if (state.deleted.has(id)) continue;
+      const w = state.working.get(id);
+      rows.push(state.fields.map((f) => (w[f] != null ? w[f] : '')));
+    }
+    return { fields: state.fields, rows };
+  }
+
+  function integrityCheck(output, text) {
+    // "Hata olmasin" -- diske yazmadan once birkac basit ama gercek kontrol.
+    const problems = [];
+    if (!output.fields.length) problems.push('Alan listesi boş.');
+    const expectedCount = state.order.length - state.deleted.size;
+    if (output.rows.length !== expectedCount) {
+      problems.push(`Satır sayısı beklenenden farklı (${output.rows.length} / ${expectedCount}).`);
+    }
+    const idIdx = output.fields.indexOf('id');
+    const seenIds = new Set();
+    for (const row of output.rows) {
+      if (row.length !== output.fields.length) { problems.push('Bir satırda alan sayısı uyuşmuyor.'); break; }
+      const id = row[idIdx];
+      if (!id) { problems.push('Kimliği boş bir satır var.'); break; }
+      if (seenIds.has(id)) { problems.push(`"${id}" kimliği birden fazla satırda kullanılmış.`); break; }
+      seenIds.add(id);
+    }
+    // Yazilacak metnin gercekten ayni veriyi geri verdigini dogrula (round-trip).
+    try {
+      const reparsed = JSON.parse(text);
+      if (!Array.isArray(reparsed.rows) || reparsed.rows.length !== output.rows.length) {
+        problems.push('Yazılacak metin geri okunduğunda tutarsız çıktı.');
+      }
+    } catch (e) {
+      problems.push('Yazılacak metin geçerli JSON değil: ' + e.message);
+    }
+    return problems;
+  }
+
+  async function saveToDisk() {
+    const output = buildOutputObject();
+    const text = JSON.stringify(output);
+    const problems = integrityCheck(output, text);
+    if (problems.length) {
+      alert('Kaydetme durduruldu, şu sorunlar bulundu:\n\n' + problems.join('\n') + '\n\nDosyanıza hiçbir şey yazılmadı.');
+      return;
+    }
+
+    try {
+      if (state.handle) {
+        // Once, uzerine yazilacak onceki icerigin bir yedegini indiriyoruz --
+        // "kaydet" tek yonlu bir islem olmasin.
+        downloadBackup(state.lastSavedText);
+        const writable = await state.handle.createWritable();
+        await writable.write(text);
+        await writable.close();
+      } else {
+        downloadBlob(text, 'words.json');
+      }
+    } catch (err) {
+      alert('Diske yazarken bir hata oluştu, dosyanız değişmemiş olabilir:\n' + err.message);
+      return;
+    }
+
+    state.lastSavedText = text;
+    state.dirty = false;
+    state.editedThisSession.clear();
+    // Silinenler artik diske yazildigi icin bellekten de temizlenebilir.
+    for (const id of state.deleted) { state.order = state.order.filter((x) => x !== id); state.working.delete(id); state.original.delete(id); }
+    state.deleted.clear();
+    state.added.clear();
+    renderAll();
+    toast(state.handle ? 'Dosyaya kaydedildi. Bir de yedek indirildi.' : 'words.json indirildi.');
+  }
+
+  function downloadBlob(text, filename) {
+    const blob = new Blob([text], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+  function downloadBackup(text) {
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    downloadBlob(text, `words_backup_${stamp}.json`);
+  }
+
+  $('#btnSave').onclick = saveToDisk;
+
+  // ---------------------------------------------------------------- ilk kurulum
+  buildLevelChips();
+})();
+</script>
+</body>
+</html>
