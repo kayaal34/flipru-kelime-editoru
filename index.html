@@ -1074,10 +1074,13 @@
 
   function renderTable() {
     const filtered = getFiltered();
-    const totalPages = Math.max(1, Math.ceil(filtered.length / ui.pageSize));
+    // "Tumu" secenegi Infinity tasir; 0 * Infinity = NaN olup slice'i
+    // bozmasin diye burada guvenli buyuk bir sayiya indirgeniyor.
+    const pageSize = Number.isFinite(ui.pageSize) ? ui.pageSize : filtered.length || 1;
+    const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
     ui.page = Math.min(ui.page, totalPages);
-    const start = (ui.page - 1) * ui.pageSize;
-    const pageItems = filtered.slice(start, start + ui.pageSize);
+    const start = (ui.page - 1) * pageSize;
+    const pageItems = filtered.slice(start, start + pageSize);
 
     $('#tbody').innerHTML = pageItems.map(({ id, w, issues }) => {
       const rowCls = state.added.has(id) ? 'is-added' : (state.editedThisSession.has(id) ? 'is-edited' : '');
@@ -1116,13 +1119,25 @@
     $$('#tbody [data-edit]').forEach((b) => b.onclick = () => openPanel(b.dataset.edit));
     $$('#tbody [data-del]').forEach((b) => b.onclick = () => deleteRow(b.dataset.del));
 
+    const pageSizeOpts = [25, 50, 100, 200, 500, Infinity];
     $('#pagebar').innerHTML = `
       <button class="btn btn-ghost" id="pgPrev" ${ui.page <= 1 ? 'disabled' : ''}>‹ Önceki</button>
       <span>Sayfa <b>${ui.page}</b> / ${totalPages} &nbsp;·&nbsp; <b>${filtered.length}</b> kelime listelendi</span>
       <button class="btn btn-ghost" id="pgNext" ${ui.page >= totalPages ? 'disabled' : ''}>Sonraki ›</button>
+      <span style="display:flex; align-items:center; gap:6px;">
+        <label for="pageSizeSelect" style="color:var(--text-faint)">Sayfa başına:</label>
+        <select id="pageSizeSelect" class="pill">
+          ${pageSizeOpts.map((n) => `<option value="${n}" ${n === ui.pageSize ? 'selected' : ''}>${n === Infinity ? 'Tümü' : n}</option>`).join('')}
+        </select>
+      </span>
     `;
     $('#pgPrev').onclick = () => { ui.page--; renderTable(); };
     $('#pgNext').onclick = () => { ui.page++; renderTable(); };
+    $('#pageSizeSelect').onchange = (e) => {
+      ui.pageSize = Number(e.target.value);
+      ui.page = 1;
+      renderTable();
+    };
   }
 
   function renderChangesButton() {
