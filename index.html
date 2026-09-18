@@ -1539,6 +1539,19 @@
             return;
           }
         }
+        // Dosya bu sekmede acildiktan sonra baska bir yerden (Claude'un
+        // duzeltme turlari, git, baska bir sekme) degistiyse, kaydetmek o
+        // degisiklikleri sessizce silerdi: bellekteki eski kopya diskin
+        // uzerine yazilir.
+        const diskteki = await (await state.handle.getFile()).text();
+        if (state.lastSavedText != null && diskteki !== state.lastSavedText) {
+          const devam = confirm(
+            'DİKKAT: words.json bu sekmede açıldıktan sonra başka bir yerden değiştirilmiş.\n\n' +
+            'Şimdi kaydederseniz o değişiklikler SİLİNİR.\n\n' +
+            'Önerilen: "İptal" deyin, "Bu oturumdaki değişiklikler"den kendi düzenlemelerinizi not alın, sayfayı yenileyip dosyayı yeniden açın.\n\n' +
+            'Yine de üzerine yazılsın mı?');
+          if (!devam) return;
+        }
         const writable = await state.handle.createWritable();
         await writable.write(text);
         await writable.close();
