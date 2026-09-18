@@ -1414,8 +1414,33 @@
     try { list = loadHistory(); } catch { list = []; }
     list.unshift(entry);
     if (list.length > 200) list.length = 200;
+    // Ayrinti listesi kayit basina onlarca KB tutabiliyor; tarayicinin
+    // ~5 MB sinirina takilmamak icin yalnizca son 20 kayitta tutuluyor,
+    // daha eskilerde sayilar kaliyor.
+    list.forEach((h, i) => {
+      if (i >= 20) { delete h.changes; delete h.addedWords; delete h.deletedWords; }
+    });
     try { localStorage.setItem(HISTORY_KEY, JSON.stringify(list)); }
     catch { /* ozel gezinti/depolama kapali olabilir -- sessizce gec, kaydetmeyi engellemesin */ }
+  }
+
+  /// Bir kaydin ayrintisi: hangi kelimede hangi alan neyken ne oldu.
+  /// Eski kayitlarda (bu ozellikten once) yalnizca sayilar var.
+  function historyDetails(h) {
+    const satirlar = [];
+    for (const c of h.changes || []) {
+      for (const [f, [a, b]] of Object.entries(c.fields)) {
+        satirlar.push(`<div class="mono" style="font-size:12px">${esc(c.id)} · ${esc(c.ru)} · <b>${esc(f)}</b>: <s>${esc(a)}</s> → ${esc(b)}</div>`);
+      }
+    }
+    for (const w of h.addedWords || []) {
+      satirlar.push(`<div class="mono" style="font-size:12px">+ ${esc(w.id)} · ${esc(w.ru || '')} · ${esc(w.tr || '')}</div>`);
+    }
+    for (const w of h.deletedWords || []) {
+      satirlar.push(`<div class="mono" style="font-size:12px">− ${esc(w.id)} · ${esc(w.ru)} · ${esc(w.tr)}</div>`);
+    }
+    if (!satirlar.length) return '';
+    return `<details style="margin:0 0 12px"><summary class="who" style="cursor:pointer">Değişiklikleri göster (${satirlar.length})</summary>${satirlar.join('')}</details>`;
   }
 
   function renderHistoryModal() {
@@ -1435,6 +1460,7 @@
           <span class="who">toplam ${h.total} kelime</span>
         </span>
       </div>
+      ${historyDetails(h)}
     `).join('');
   }
 
@@ -1517,9 +1543,20 @@
         await writable.write(text);
         await writable.close();
         wroteDirectly = true;
-        // Yazma basarili OLDUKTAN sonra, uzerine yazilan onceki icerigin
-        // yedegini indiriyoruz.
-        downloadBackup(state.lastSavedText);
+        // Onceden burada, uzerine yazilan ESKI icerik "words_backup_...json"
+        // diye indiriliyordu. 17 Eylul'de tam bu dosya "yeni dosya" sanilip
+        // words.json'in yerine kondu ve 96 duzenleme kayboldu. Kaydetme
+        // sonrasi elinde eski halin durdugu bir dosya olmasi tuzaktan baska
+        // bir sey degil; yedek indirilmiyor. Neyin degistigi asagida kayit
+        // gecmisine yaziliyor, geri donmek gerekirse oradan yapilir.
+        //
+        // Yazilani diskten geri okuyup karsilastiriyoruz: "kaydedildi"
+        // dedigimiz sey gercekten dosyada mi.
+        const geriOkunan = await (await state.handle.getFile()).text();
+        if (geriOkunan !== text) {
+          alert('DİKKAT: Dosyaya yazıldı ama geri okunduğunda içerik farklı çıktı.\n\nDeğişiklikleriniz bu sekmede duruyor — sekmeyi KAPATMAYIN ve tekrar "Diske kaydet"e basın.');
+          return;
+        }
       } catch (err) {
         // Dogrudan yazma basarisiz oldu -- kullaniciyi elinde hicbir sey
         // olmadan birakmamak icin indirmeye dusuyoruz, sessizce durmuyoruz.
@@ -1534,6 +1571,29 @@
     const addedCount = state.added.size;
     const deletedCount = state.deleted.size;
     const editedCount = [...state.editedThisSession].filter((id) => !state.added.has(id)).length;
+
+    // Yalnizca sayilari degil, NEYIN degistigini de sakliyoruz. Dosya
+    // kayboldugunda elde "96 duzenlendi" disinda bir sey yoktu; bu listeyle
+    // butun duzenlemeler geri kurulabilir.
+    const changes = [];
+    for (const id of state.editedThisSession) {
+      if (state.added.has(id)) continue;
+      const before = state.original.get(id) || {};
+      const after = state.working.get(id) || {};
+      const fields = {};
+      for (const f of state.fields) {
+        const a = before[f] != null ? before[f] : '';
+        const b = after[f] != null ? after[f] : '';
+        if (a !== b) fields[f] = [a, b];
+      }
+      if (Object.keys(fields).length) changes.push({ id, ru: after.ru || before.ru || '', fields });
+    }
+    const addedWords = [...state.added].map((id) => ({ ...state.working.get(id) }));
+    const deletedWords = [...state.deleted].map((id) => {
+      const w = state.original.get(id) || state.working.get(id) || {};
+      return { id, ru: w.ru || '', tr: w.tr || '' };
+    });
+
     appendHistory({
       when: new Date().toLocaleString('tr-TR'),
       fileName: $('#fileNameLabel').textContent,
@@ -1542,7 +1602,17 @@
       deleted: deletedCount,
       total: output.rows.length,
       direct: wroteDirectly,
+      changes,
+      addedWords,
+      deletedWords,
     });
+
+    // Kaydedilen hal artik "orijinal": bir sonraki kayittaki fark ve
+    // "degisiklikleri geri al" bu hale gore hesaplansin, dosya ilk
+    // acildigindaki hale gore degil.
+    for (const id of [...state.editedThisSession, ...state.added]) {
+      if (state.working.has(id)) state.original.set(id, { ...state.working.get(id) });
+    }
 
     state.lastSavedText = text;
     state.dirty = false;
@@ -1553,7 +1623,10 @@
     state.deleted.clear();
     state.added.clear();
     renderAll();
-    toast(wroteDirectly ? 'Dosyaya kaydedildi. Bir de yedek indirildi.' : 'words.json indirildi — projenizdeki dosyayla değiştirmeyi unutmayın.');
+    const toplamDegisiklik = editedCount + addedCount + deletedCount;
+    toast(wroteDirectly
+      ? `✓ words.json kaydedildi (${toplamDegisiklik} değişiklik). Başka bir dosya indirip değiştirmeniz GEREKMİYOR.`
+      : 'words.json indirildi — projenizdeki assets/data/words.json dosyasının yerine bunu koyun.');
   }
 
   function downloadBlob(text, filename) {
@@ -1565,10 +1638,6 @@
     setTimeout(() => URL.revokeObjectURL(url), 4000);
   }
 
-  function downloadBackup(text) {
-    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-    downloadBlob(text, `words_backup_${stamp}.json`);
-  }
 
   $('#btnSave').onclick = saveToDisk;
 

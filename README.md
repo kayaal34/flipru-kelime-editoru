@@ -8,8 +8,11 @@ FlipRU'nun `assets/data/words.json` dosyasını yönetmek için tamamen yerel ç
 2. **"Dosya aç"** ile FlipRU projesindeki `assets/data/words.json`'ı seçin.
 3. Arama kutusu, seviye (A1–C1) ve tema filtreleriyle kelimeleri bulun.
 4. Bir satırın ✏️ ikonuna tıklayıp düzenleyin, 🗑️ ile silin, **"Yeni kelime"** ile ekleyin.
-5. İşiniz bitince **"Diske kaydet"** — değişiklik doğrudan seçtiğiniz dosyaya yazılır. Her kayıtta otomatik olarak bir de zaman damgalı yedek (`words_backup_...json`) indirilir.
-6. Değiştirilen `words.json`'ı FlipRU projesine kopyalayıp uygulamayı yeniden derleyip yayınlayın — panelde yapılan değişiklik, yeni bir sürüm çıkana kadar mevcut kullanıcılara yansımaz.
+5. İşiniz bitince **"Diske kaydet"** — değişiklik doğrudan 2. adımda seçtiğiniz dosyaya, yani projedeki `assets/data/words.json`'a yazılır. **Bu kadar. Başka bir dosya indirip kopyalamanız gerekmez** — kopyalamak, kaydedilen dosyanın üzerine yazıp değişiklikleri siler.
+6. Kaydettikten sonra **"Kayıt geçmişi"** → "Değişiklikleri göster" ile neyin yazıldığını görebilirsiniz. Geri almanız gerekirse bu liste kaynaktır.
+7. Değişiklikler, uygulama yeniden derlenip yeni sürüm yayınlanana kadar kullanıcılara yansımaz.
+
+> 17 Eylül 2026'ya kadar her kayıttan sonra eski içerik `words_backup_...json` adıyla indiriliyordu. O dosya "yeni dosya" sanılıp words.json'ın yerine konunca 96 düzenleme kayboldu; yedek indirme bu yüzden kaldırıldı.
 
 ## Neler var
 
